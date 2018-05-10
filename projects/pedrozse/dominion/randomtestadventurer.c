@@ -8,6 +8,11 @@
 #include <time.h>
 
 int main() {
+  printf("***** RANDOM TEST *****\n");
+  printf("File: randomcardtestadventurer.c\n");
+  printf("Function: adventurerCard()\n");
+  printf("***********************\n");
+	
     struct gameState G;
     int seed = 1000;
     int numPlayers = 2;
@@ -31,6 +36,7 @@ int main() {
     int testPassed = 0;
     int drawTestFailed = 0;
     int discardTestFailed = 0;
+    int passed = 1;
     
     srand(time(NULL));
    //randomize hand size
@@ -87,7 +93,7 @@ int main() {
                 discardGold++;
             }
         }
-        int passed = 1;
+
         if(coinCount > (coinCountBefore + 2)){
             printf("Too many cards drawn: Test Failed\n\n");
             drawTestFailed++;
@@ -118,13 +124,19 @@ int main() {
         }
 
         if(passed == 1){
-            printf("All Tests: Passed\n\n");
             testPassed++;
         }
    }
    
-   printf("\n\n");
-   printf("# of Tests Passed: %d\n", testPassed);
+   printf("\n");
+   printf("\n***** RESULTS *****\n");
+   printf("PASSED TESTS: %d\n",testPassed);
+   printf("FAILED TESTS: %d\n",discardTestFailed);
+	 
+   if (discardTestFailed == 0) {
+       printf ("***** PASSED RANDOM TEST *****\n\n");
+   }
    
+   printf ("****** COVERAGE ******\n");
    return 0;
 }

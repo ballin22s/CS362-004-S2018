@@ -163,12 +163,8 @@ static int  initialized   = 0;          /* test for stream initialization */
 
   SelectStream(0);                  /* select the default stream */
   PutSeed(1);                       /* and set the state to 1    */
-  for(i = 0; i < 10000; i++){
+  for(i = 0; i < 10000; i++)
     u = Random();
-    if (ok)
-       printf(" %f  \n\n", u);
-  
- }
   GetSeed(&x);                      /* get the new state value   */
   ok = (x == CHECK);                /* and check for correctness */
 

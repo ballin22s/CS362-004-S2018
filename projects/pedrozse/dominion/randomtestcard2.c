@@ -1,121 +1,162 @@
 #include "dominion.h"
 #include "dominion_helpers.h"
-#include <string.h>
-#include <stdio.h>
-#include <assert.h>
 #include "rngs.h"
+#include <string.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <stdio.h>
+#include <time.h>
 #include <math.h>
 
-void OtherPlayersCards(struct gameState *);
-void VillageTEST(int, struct gameState *, int);
+// fail counter variables
+int cardEffectFails = 0;
+int discardCardFails = 0;
+int drawCardFails = 0;
+int deckHandCountFails = 0;
+int numBuysFails = 0;
+int otherPlayerDeckHandFails = 0;
 
-//deck update with discard 
-void OtherPlayersCards(struct gameState *G) {
-  int i, j;
-	
-	for(i = 0; i < 2; i++) {
-		
-	  int deckCards = floor(Random() * MAX_DECK);
-    G->discardCount[i] = 0;
-    G->playedCardCount = 0;
-    int handCards = floor(Random() * MAX_HAND);
+// function to check the council_roomCard
+void checkCouncil_RoomCard(int p, struct gameState *post) {
+    int r,s,t,u,v,w,x,i;
+    int bonus = 0;
 
-    if (handCards >  10 && deckCards > 10) {
-        if (rand()%2 == 1){
-            deckCards /= 2;
-            handCards /= 2;
+    // game state variable to manually act on the functions actions
+    struct gameState pre;
+
+    // copy the passed in game state to pre
+    memcpy(&pre,post,sizeof(struct gameState));
+
+    // call the card effect function with the smithy card
+    r = cardEffect(council_room,0,0,0,post,0,&bonus);
+
+    // call draw card 4 times
+    s = drawCard(p,&pre);
+    t = drawCard(p,&pre);
+    u = drawCard(p,&pre);
+    v = drawCard(p,&pre);
+
+    pre.numBuys++;
+
+    // have each other player draw a card
+    for (i = 0; i < pre.numPlayers; i++) {
+        if (i != p) {
+            w = drawCard(i,&pre);
+            // check if drawcard failed
+            if (w == -1 && pre.deckCount[i] != 0) {
+                drawCardFails++;
+            }
         }
     }
-		
-		//update deck/hand values
-		G->deckCount[i]  = deckCards;
-		G->handCount[i] = deckCards;
-		
-		for(j = 0; j < deckCards; j++)
-            G->deck[i][j] = floor(Random() * (treasure_map + 1));
 
-		for(j = 0; j < handCards; j++)
-            G->hand[i][j] = floor(Random() * (treasure_map + 1));
-	}
+    // call discardCard
+    x = discardCard(0, p, &pre, 0);
+
+    // get values of hand and deck counts
+    int postHC = post->handCount[p];
+    int postDC = post->deckCount[p];
+    int preHC = pre.handCount[p];
+    int preDC = pre.deckCount[p];
+
+    // check if numBuys dont match
+    if (pre.numBuys != post->numBuys) {
+        numBuysFails++;
+    }
+
+    // check if any drawcard failed
+    if (s == -1 && pre.deckCount[p] != 0) {
+        drawCardFails++;
+    }
+    if (t == -1 && pre.deckCount[p] != 0) {
+        drawCardFails++;
+    }
+    if (u == -1 && pre.deckCount[p] != 0) {
+        drawCardFails++;
+    }
+    if (v == -1 && pre.deckCount[p] != 0) {
+        drawCardFails++;
+    }
+
+    // check if cardeffect or discardCard failed
+    if (!(r == 0 && x == 0)) {
+        if (r) {
+            cardEffectFails++;
+        }
+        if (x) {
+            discardCardFails++;
+        }
+    }
+
+    // check if the hand and deck counts dont match up
+    if (!(postHC == preHC && postDC == preDC)) {
+        deckHandCountFails++;
+    }
+
+    // check if the other players hand and deck counts match
+    for (i = 0; i < pre.numPlayers; i++) {
+        if (i != p) {
+            if (!(post->handCount[i] == pre.handCount[i] &&
+                  post->deckCount[i] == pre.deckCount[i])) {
+                      otherPlayerDeckHandFails++;
+            }
+        }
+    }
 }
 
-//testing the village card
-void VillageTEST(int player1, struct gameState *G, int handPos) {
-	
-    int player2, result;
-    int discardCount = 0;
-    struct gameState testG;
-    memcpy (&testG, G, sizeof(struct gameState));
+int main () {
+    printf("***** RANDOM TEST *****\n");
+    printf("File: randomcardtest2.c\n");
+    printf("Function: council_roomCard()\n");
+    printf("***********************\n");
 
-    player2 = (player1 == 1) ? 0 : 1;
-    result = villageCard(&testG, player1, handPos);
+    int iterations = 10000;
+    int i, n, player, deckCount, handCount, discardCount;
+    int numberOfPlayers[] = {2,3,4};
+    struct gameState G;
+    srand(time(NULL));
 
-    drawCard(player1, G);
-    G->numActions += 2;
+    // randomly initialized the game state
+    for (n = 0; n < iterations; n++) {
+        for (i = 0; i < sizeof(struct gameState); i++) {
+            ((char*)&G)[i] = floor(Random() * 256);
+        }
+        // randomly select appropriate values
+        G.numPlayers = numberOfPlayers[rand() % 3];
+        G.numBuys = 1;
+        G.playedCardCount = floor(Random() * (MAX_DECK-1));
+        player = G.numPlayers - 2;
+        deckCount = floor(Random() * MAX_DECK);
+        handCount = floor(Random() * MAX_HAND);
+        discardCount = floor(Random() * MAX_DECK);
+        G.whoseTurn = player;
+        // set hand and deck values of other players
+        for (i = 0; i < G.numPlayers; i++) {
+            G.deckCount[i] = deckCount;
+            G.handCount[i] = handCount;
+            G.discardCount[i] = discardCount;
+        }
+        // call the check function
+        checkCouncil_RoomCard(player,&G);
+    }
+    int totalFails = cardEffectFails + discardCardFails + drawCardFails
+                    + deckHandCountFails + numBuysFails;
+    printf("\n***** RESULTS *****\n");
+    printf("PASSED TESTS: %d\n",iterations - totalFails);
+    printf("FAILED TESTS: %d\n",totalFails);
 
-    discardCard(handPos, player1, G, 0);
-    discardCount++;
-
-    // OUTPUT
-    assert (result == 0); // village good
-    printf("ACTIONS: actions %d, expected %d\n", testG.numActions, G->numActions);
-		
-    if (testG.numActions != G->numActions) 
-        printf("ACTIONS FAILED: incorrect number of actions taken.\n");
-
-    printf("DISCARD CARD: Current player card count %d, expected value %d\n", testG.playedCardCount, G->playedCardCount);
-    assert(testG.playedCardCount == G->playedCardCount);
-    printf("Discard village card minus played card value: %d, expected value %d\n", testG.playedCards[testG.playedCardCount - 1], village);
-    assert(testG.playedCards[testG.playedCardCount - 1] == village);
-
-    printf("Updated deck count minus actual: %d, expected deck count: %d\n", testG.deckCount[player2], G->deckCount[player2]);
-    assert(testG.deckCount[player2] == G->deckCount[player2]);
-    printf("Update hand count minus actual: %d, expected hand count: %d\n", testG.handCount[player2], G->handCount[player2]);
-    assert(testG.handCount[player2] == G->handCount[player2]);
-    printf("Updated discard count minus actual: %d, expected discard value: %d\n", testG.discardCount[player2], G->discardCount[player2]);
-    assert(testG.discardCount[player2] == G->discardCount[player2]);
-
-    if (memcmp(G, &testG, sizeof(struct gameState)) == 0)
-        printf("Village was successful: Game states are the same.\n");
-    else
-        printf("Village failed: Game states are NOT the same.\n");
-}
-
-
-//main: testing struct
-int main() {
-	
-  int i, n, player1;
-  int handPos = 0;
-	struct gameState G;
-
-	SelectStream(2);
-  PutSeed(3);
-
-  printf("TEST village Card. \n");
-	
-  for (n = 0; n < 1000; n++) {
-      printf("\n TEST\n\n");
-      // randomize struct - from lecture
-      for (i = 0; i < sizeof(struct gameState); i++) {
-        ((char*)&G)[i] = floor(Random() * 256);
-      }
-
-      OtherPlayersCards(&G);
-      // pick random player
-      G.numActions = 0;
-      player1 = floor(Random() * 2);
-
-      do {
-          handPos = Random() * G.handCount[player1];
-      } while (handPos == G.handCount[player1]);
-			
-      G.hand[player1][handPos] = village;
-      VillageTEST(player1, &G, handPos);
-  }
-	
-	printf("\n TESTING COMPLETE \n\n");
-
-	return 0;
+    if (totalFails == 0) {
+        printf ("***** PASSED RANDOM TEST *****\n\n");
+    }
+    else {
+        printf("\n***** FAILURE REPORT *****\n");
+        printf("drawCard() failed: %d\n",drawCardFails);
+        printf("cardEffect() failed: %d\n",cardEffectFails);
+        printf("discardCard() failed: %d\n",discardCardFails);
+        printf("numBuys Count mismatch: %d\n",numBuysFails);
+        printf("Other players hand/deck count mismatch: %d\n",otherPlayerDeckHandFails);
+        printf("Selected player hand/deck count mismatch: %d\n",deckHandCountFails);
+        printf ("***** FAILED RANDOM TEST *****\n\n");
+    }
+    printf ("****** COVERAGE ******\n");
+    return 0;
 }

@@ -1,91 +1,117 @@
 #include "dominion.h"
 #include "dominion_helpers.h"
-#include <string.h>
-#include <stdio.h>
-#include <assert.h>
 #include "rngs.h"
+#include <string.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <stdio.h>
 #include <time.h>
+#include <math.h>
 
-//testing smithy
-int main() {
-	
-    struct gameState G;
-    int seed = 1000;
-    int numPlayers = 2;
-    int curPlayer = 0;
-	  int k[10] = {adventurer, embargo, village, minion, mine, cutpurse,
-			sea_hag, tribute, smithy, council_room};  
-    int deckSize;
-    int handSize;
-    int handPos;
-    int deckBefore;
-    int deckAfter;
-    int handBefore;
-    int handAfter;
-    int discardBefore;
-    int discardAfter;
-    int i;
-    int deckFailure = 0;
-    int handFailure = 0;
-    int discardFailure = 0;
-    int testPassed = 0;
-    int passed;
-    
-    srand(time(NULL));
-		
-   //randomize hand size
-    for(i = 0; i < 1000000; i++) {
-        initializeGame(numPlayers, k, seed, &G);
-				
-        deckSize = rand() % (MAX_DECK + 1);
-        handSize = rand() % (deckSize + 1);
-        
-        G.deckCount[0] = deckSize - handSize;
-        G.handCount[0] = handSize;
-        
-        handPos = G.hand[curPlayer][G.handCount[curPlayer] - 1];
-        deckBefore = G.deckCount[0];
-        handBefore = G.handCount[0];
-        discardBefore = G.playedCardCount;        
-        
-        smithyEffect(handPos, curPlayer, &G);
-        
-        deckAfter = G.deckCount[0];
-        handAfter = G.handCount[0];
-        discardAfter = G.playedCardCount;
-        
-        passed = 1;
-        
-        if(handAfter != (handBefore + 2)) {
-            printf("Incorrect amount of cards drawn: Test Failed\n\n");
-            handFailure++;
-            passed = 0;
-        }
-        
-        if(deckAfter != (deckBefore - 3)) {
-            printf("Incorrect number of cards removed from deck: Test Failed\n\n");
-            deckFailure++;
-            passed = 0;
-        }
-        
-        if(discardAfter != (discardBefore + 1)) {
-            printf("Smithy Not Discarded after use: Test Failed\n\n");
-            discardFailure++;
-            passed = 0;
-        }
-        
-        if(passed == 1){
-            printf("All Tests Passed!! Horray lucky us!\n\n");
-            testPassed++;
-        }
-        
+// fail counter variables
+int cardEffectFails = 0;
+int discardCardFails = 0;
+int drawCardFails = 0;
+int deckHandCountFails = 0;
+
+// function to check the smithyCard
+void checkSmithyCard(int p, struct gameState *post) {
+    int r,s,t,u,v;
+
+    // game state variable to manually act on the functions actions
+    struct gameState pre;
+
+    // copy the passed in game state to pre
+    memcpy(&pre,post,sizeof(struct gameState));
+    int bonus = 0;
+
+    // call the card effect function with the smithy card
+    r = cardEffect(smithy,0,0,0,post,0,&bonus);
+
+    // call draw card 3 times
+    s = drawCard(p,&pre);
+    t = drawCard(p,&pre);
+    u = drawCard(p,&pre);
+
+    // call discardCard
+    v = discardCard(0, p, &pre, 0);
+
+    // get values of hand and deck counts
+    int postHC = post->handCount[p];
+    int postDC = post->deckCount[p];
+    int preHC = pre.handCount[p];
+    int preDC = pre.deckCount[p];
+
+    // check if any drawcard failed
+    if (s == -1 && pre.deckCount[p] != 0) {
+        drawCardFails++;
     }
-        
-   printf("\n");
-   printf("# of Tests Passed: %d\n", testPassed);
-   printf("# of Cards Drawn To Hand Failed: %d\n", handFailure);
-   printf("# of Smithy Discarded Fails: %d\n\n", discardFailure);        
-   
-   return 0;
+    if (t == -1 && pre.deckCount[p] != 0) {
+        drawCardFails++;
+    }
+    if (u == -1 && pre.deckCount[p] != 0) {
+        drawCardFails++;
+    }
+
+    // check if cardeffect or discardCard failed
+    if (!(r == 0 && v == 0)) {
+        if (r) {
+            cardEffectFails++;
+        }
+        if (v) {
+            discardCardFails++;
+        }
+    }
+
+    // check if the hand and deck counts dont match up
+    if (!(postHC == preHC && postDC == preDC)) {
+        deckHandCountFails++;
+    }
+}
+
+int main () {
+    printf("***** RANDOM TEST *****\n");
+    printf("File: randomcardtest1.c\n");
+    printf("Function: simthyCard()\n");
+    printf("***********************\n");
+
+    int iterations = 10000;
+    int i, n, player;
+    struct gameState G;
+    srand(time(NULL));
+
+    // randomly initialized the game state
+    for (n = 0; n < iterations; n++) {
+        for (i = 0; i < sizeof(struct gameState); i++) {
+            ((char*)&G)[i] = floor(Random() * 256);
+        }
+        // randomly select appropriate values
+        player = floor(Random() * MAX_PLAYERS);
+        G.deckCount[player] = floor(Random() * MAX_DECK);
+        G.discardCount[player] = floor(Random() * MAX_DECK);
+        G.handCount[player] = floor(Random() * MAX_HAND);
+        G.playedCardCount = floor(Random() * (MAX_DECK-1));
+        G.whoseTurn = player;
+        // call the check function
+        checkSmithyCard(player,&G);
+    }
+    int totalFails = cardEffectFails + discardCardFails +
+                        drawCardFails + deckHandCountFails;
+    printf("\n***** RESULTS *****\n");
+    printf("PASSED TESTS: %d\n",iterations - totalFails);
+    printf("FAILED TESTS: %d\n",totalFails);
+
+    if (totalFails == 0) {
+        printf ("***** PASSED RANDOM TEST *****\n\n");
+    }
+    else {
+        printf("\n***** FAILURE REPORT *****\n");
+        printf("drawCard() failed: %d\n",drawCardFails);
+        printf("cardEffect() failed: %d\n",cardEffectFails);
+        printf("discardCard() failed: %d\n",discardCardFails);
+        printf("Hand/Deck Count mismatch: %d\n",deckHandCountFails);
+        printf ("***** FAILED RANDOM TEST *****\n\n");
+    }
+    printf ("****** COVERAGE ******\n");
+    return 0;
 }
