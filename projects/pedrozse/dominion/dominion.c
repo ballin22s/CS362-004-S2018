@@ -1333,8 +1333,8 @@ int playFeast(struct gameState *state, int choice1){
 	//gain card with cost up to 5
   //Backup hand
   for (i = 0; i <= state->handCount[currentPlayer]; i++) {
-		mphand[i] = state->hand[currentPlayer][i];	//Backup card
-		ate->hand[currentPlayer][i] = -1;	//Set to nothing
+		temphand[i] = state->hand[currentPlayer][i];	//Backup card
+		state->hand[currentPlayer][i] = -1;	//Set to nothing
   }
 
   //Update Coins for Buy
@@ -1374,8 +1374,8 @@ int playFeast(struct gameState *state, int choice1){
 
   //Reset Hand
   for (i = 0; i <= state->handCount[currentPlayer]; i++) {
-		ate->hand[currentPlayer][i] = temphand[i];
-		mphand[i] = -1;
+		state->hand[currentPlayer][i] = temphand[i];
+		temphand[i] = -1;
   }
     			
   return 0;
