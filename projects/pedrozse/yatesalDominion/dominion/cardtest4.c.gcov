@@ -1,0 +1,106 @@
+        -:    0:Source:cardtest4.c
+        -:    0:Graph:cardtest4.gcno
+        -:    0:Data:cardtest4.gcda
+        -:    0:Runs:2
+        -:    0:Programs:1
+        -:    1:#include <stdio.h>
+        -:    2:#include <assert.h>
+        -:    3:#include <stdlib.h>
+        -:    4:#include "dominion.h"
+        -:    5:#include "dominion_helpers.h"
+        -:    6:#include "rngs.h"
+        -:    7:
+        -:    8://Custom Assert Function
+        -:    9:void assertTrue(int a, int b, char* testName)
+        -:   10:{
+       12:   11:	if(a == b)
+        -:   12:	{
+        8:   13:		printf("%s Test Successful\n", testName);
+        8:   14:	}
+        -:   15:	
+        -:   16:	else
+        -:   17:	{
+        4:   18:		printf("%s Test Failed\n", testName);
+        -:   19:	}
+       12:   20:}
+        -:   21:
+        -:   22://Random Kingdom Card
+        -:   23:int randomCard()
+        -:   24:{
+        4:   25:	int card = (rand() % 10);
+        -:   26:	
+        2:   27:	return card;
+        -:   28:}
+        -:   29:
+        -:   30:int main(int argc, char *argv[])
+        -:   31:{
+        2:   32:	int numPlayers = 2;
+        2:   33:	int k[10] = {smithy, adventurer, council_room, feast, gardens, mine, remodel, village, salvager, great_hall};
+        2:   34:	int seed = 10;
+        -:   35:	struct gameState state;
+        2:   36:	int choice1 = 0; //Required for this card
+        2:   37:	int choice2 = 0;
+        2:   38:	int choice3 = 0;
+        2:   39:	int handpos = 0;
+        2:   40:	int bonus = 0;
+        2:   41:	int r = randomCard(); //get a random number between 0 and 9
+        -:   42:   
+        -:   43:	//Print which test is being run
+        2:   44:	printf("Card Test - Salvager - Without Trashing\n");
+        -:   45:	
+        2:   46:	int initSuccess = initializeGame(numPlayers, k, seed, &state);
+        2:   47:	if(initSuccess != 0)
+        -:   48:	{
+    #####:   49:	   printf("Game failed to initialize\n");
+    #####:   50:	}
+        -:   51:    
+        -:   52:	//State of Game Before Salvager is Played
+        2:   53:	int fullDeckSizeBefore = state.deckCount[whoseTurn(&state)] + state.handCount[whoseTurn(&state)] + state.discardCount[whoseTurn(&state)];;
+        2:   54:	int numBuys = state.numBuys;
+        2:   55:	int moneyToSpend = state.coins;
+        -:   56:	
+        -:   57:	//Play Salvager
+        2:   58:	cardEffect(salvager, choice1, choice2, choice3, &state, handpos, &bonus);
+        -:   59:   
+        -:   60:	//State of Game After Salvager is Played
+        2:   61:	int fullDeckSizeAfter = state.deckCount[whoseTurn(&state)] + state.handCount[whoseTurn(&state)] + state.discardCount[whoseTurn(&state)];
+        -:   62:	
+        -:   63:	//Test Correct Deck Size - Should Remain Unchanged
+        2:   64:	assertTrue(fullDeckSizeBefore, fullDeckSizeAfter, "Correct Full Deck Size -");
+        -:   65:	
+        -:   66:	//Test Correct Number of Buys Remaining
+        2:   67:	assertTrue(numBuys + 1, state.numBuys, "Correct Number of Buys Remaining -");
+        -:   68:	
+        -:   69:	//Test Correct Amount Money to Spend - Should Remain Unchanged
+        2:   70:	assertTrue(moneyToSpend, state.coins, "Correct Amount Money to Spend -");
+        -:   71:	
+        -:   72:	//Change Choice
+        -:   73:	//Get a Random Kingdom Card
+        2:   74:	choice1 = k[r];
+        -:   75:	
+        -:   76:	//Print which test is being run
+        2:   77:	printf("Card Test - Salvager - Trashing %d\n", choice1);
+        -:   78:	
+        -:   79:	//State of Game Before Salvager is Played
+        2:   80:	fullDeckSizeBefore = state.deckCount[whoseTurn(&state)] + state.handCount[whoseTurn(&state)] + state.discardCount[whoseTurn(&state)];
+        2:   81:	numBuys = state.numBuys;
+        2:   82:	moneyToSpend = state.coins;
+        2:   83:	int valueChoice = getCost(handCard(choice1, &state));
+        -:   84:	
+        -:   85:	//Play Salvager
+        2:   86:	cardEffect(salvager, choice1, choice2, choice3, &state, handpos, &bonus);
+        -:   87:   
+        -:   88:	//State of Game After Salvager is Played
+        -:   89:	//Test Correct Full Deck Size - One Card Should be Trashed
+        2:   90:	assertTrue(fullDeckSizeBefore - 1, fullDeckSizeAfter, "Correct Full Deck Size -");
+        -:   91:	
+        -:   92:	//Test Correct Number of Buys Remaining
+        2:   93:	assertTrue(numBuys + 1, state.numBuys, "Correct Number of Buys Remaining -");
+        -:   94:	
+        -:   95:	//Test Correct Amount Money to Spend - Additional $ Should be Available 
+        2:   96:	assertTrue(moneyToSpend + valueChoice, state.coins, "Correct Amount Money to Spend -");
+        -:   97:	 
+        2:   98:	return 0;   
+        -:   99:}
+        -:  100:
+        -:  101:

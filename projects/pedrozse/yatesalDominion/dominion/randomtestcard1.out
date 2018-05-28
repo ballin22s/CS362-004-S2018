@@ -1,0 +1,22 @@
+randomtestcard1.c:
+***** RANDOM TEST *****
+File: randomcardtest1.c
+Function: simthyCard()
+***********************
+
+***** RESULTS *****
+PASSED TESTS: 0
+FAILED TESTS: 10000
+
+***** FAILURE REPORT *****
+drawCard() failed: 0
+cardEffect() failed: 0
+discardCard() failed: 0
+Hand/Deck Count mismatch: 10000
+***** FAILED RANDOM TEST *****
+
+****** COVERAGE ******
+File 'randomtestcard1.c'
+Lines executed:77.27% of 66
+randomtestcard1.c:creating 'randomtestcard1.c.gcov'
+

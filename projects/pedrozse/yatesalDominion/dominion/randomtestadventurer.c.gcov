@@ -1,0 +1,147 @@
+        -:    0:Source:randomtestadventurer.c
+        -:    0:Graph:randomtestadventurer.gcno
+        -:    0:Data:randomtestadventurer.gcda
+        -:    0:Runs:2
+        -:    0:Programs:1
+        -:    1:#include "dominion.h"
+        -:    2:#include "dominion_helpers.h"
+        -:    3:#include <string.h>
+        -:    4:#include <stdio.h>
+        -:    5:#include <assert.h>
+        -:    6:#include "rngs.h"
+        -:    7:#include <stdlib.h>
+        -:    8:#include <time.h>
+        -:    9:
+        -:   10:int main() {
+        2:   11:  printf("***** RANDOM TEST *****\n");
+        2:   12:  printf("File: randomcardtestadventurer.c\n");
+        2:   13:  printf("Function: adventurerCard()\n");
+        2:   14:  printf("***********************\n");
+        -:   15:	
+        -:   16:    struct gameState G;
+        2:   17:    int seed = 1000;
+        2:   18:    int numPlayers = 2;
+        2:   19:    int curPlayer = 0;
+        2:   20:	int k[10] = {adventurer, embargo, village, minion, mine, cutpurse,
+        -:   21:			sea_hag, tribute, smithy, council_room};  
+        -:   22:    int deckSize;
+        -:   23:    int handSize;
+        -:   24:    int i;
+        -:   25:    int j;
+        -:   26:    int q;
+        -:   27:    int randomCard;
+        -:   28:    int randK;
+        -:   29:    int m;
+        -:   30:    int coinCount;
+        -:   31:    int x;
+        -:   32:    int discardCopper;
+        -:   33:    int discardSilver;
+        -:   34:    int discardGold;
+        -:   35:    int coinCountBefore;
+        2:   36:    int testPassed = 0;
+        2:   37:    int drawTestFailed = 0;
+        2:   38:    int discardTestFailed = 0;
+        2:   39:    int passed = 1;
+        -:   40:    
+        2:   41:    srand(time(NULL));
+        -:   42:   //randomize hand size
+  4000004:   43:    for(i = 0; i < 1000000; i++){
+  2000000:   44:        initializeGame(numPlayers, k, seed, &G);
+  2000000:   45:        coinCountBefore = 0;
+  2000000:   46:        deckSize = rand() % (MAX_DECK + 1);
+        -:   47:   //set handsize
+  2000000:   48:        handSize = rand() % (deckSize + 1);
+        -:   49:      
+        -:   50:        
+  2000000:   51:        G.deckCount[0] = deckSize - handSize;
+  2000000:   52:        G.handCount[0] = handSize;
+        -:   53:                
+ 12000000:   54:        for (j = 0; j < numPlayers; j++){
+548239478:   55:            for(q = 0;q < G.deckCount[j]; q++){
+270119739:   56:                randomCard = rand() % (50 + 1);
+270119739:   57:                randK = rand() % (10);
+270119739:   58:                if(randomCard == 1){
+  5292915:   59:                    G.deck[j][q] = copper;
+270119739:   60:                } else if(randomCard == 2){
+  5294180:   61:                    G.deck[j][q] = silver;
+264826824:   62:                }else if(randomCard == 3){
+  5294818:   63:                    G.deck[j][q] = gold;
+  5294818:   64:                }else {
+254237826:   65:                    G.deck[j][q] = k[randK];
+        -:   66:                }
+270119739:   67:            }
+  4000000:   68:        } 
+        -:   69:        
+504085872:   70:        for(m = 0; m < G.handCount[curPlayer]; m++){
+734687396:   71:            if(G.hand[curPlayer][m] == copper || G.hand[curPlayer][m] == silver || G.hand[curPlayer][m] == gold){
+  7720706:   72:                coinCountBefore++;
+  7720706:   73:            }
+250042936:   74:        }
+        -:   75:        
+  2000000:   76:        coinCount = 0;
+        -:   77:        
+504085872:   78:        for(m = 0; m < G.handCount[curPlayer]; m++){
+734687396:   79:            if(G.hand[curPlayer][m] == copper || G.hand[curPlayer][m] == silver || G.hand[curPlayer][m] == gold){
+  7720706:   80:                coinCount++;
+  7720706:   81:            }
+250042936:   82:        }
+        -:   83:
+  2000000:   84:        discardCopper = 0;
+  2000000:   85:        discardSilver = 0;
+  2000000:   86:        discardGold = 0;
+  4000000:   87:        for(x = 0; x < G.discardCount[curPlayer]; x++){
+    #####:   88:            if(G.discard[curPlayer][x] == copper) {
+    #####:   89:                discardCopper++;
+    #####:   90:            } else if(G.discard[curPlayer][x] == silver) {
+    #####:   91:                discardSilver++;
+    #####:   92:            } else if(G.discard[curPlayer][x] == gold) {
+    #####:   93:                discardGold++;
+    #####:   94:            }
+    #####:   95:        }
+        -:   96:
+  2000000:   97:        if(coinCount > (coinCountBefore + 2)){
+    #####:   98:            printf("Too many cards drawn: Test Failed\n\n");
+    #####:   99:            drawTestFailed++;
+    #####:  100:            passed = 0;
+    #####:  101:        }
+        -:  102:        
+  2000000:  103:        if( coinCount < coinCountBefore){
+    #####:  104:            printf("Fewer cards exist in hand than were first present: Test Failed\n\n");
+    #####:  105:            drawTestFailed++;
+    #####:  106:            passed = 0;
+    #####:  107:        }
+  2000000:  108:        if(discardCopper != 0){
+    #####:  109:            printf("Copper was discarded: Test Failed\n\n");
+    #####:  110:            discardTestFailed++;
+    #####:  111:            passed = 0;
+    #####:  112:        }
+        -:  113:
+  2000000:  114:        if(discardSilver != 0){
+    #####:  115:            printf("Silver was discarded: Test Failed\n\n");
+    #####:  116:            discardTestFailed++;
+    #####:  117:            passed = 0;
+    #####:  118:        }
+        -:  119:
+  2000000:  120:        if(discardGold != 0){
+    #####:  121:            printf("Gold was discarded: Test Failed\n\n");
+    #####:  122:            discardTestFailed++;
+    #####:  123:            passed = 0;
+    #####:  124:        }
+        -:  125:
+  2000000:  126:        if(passed == 1){
+  2000000:  127:            testPassed++;
+  2000000:  128:        }
+  2000000:  129:   }
+        -:  130:   
+        2:  131:   printf("\n");
+        2:  132:   printf("\n***** RESULTS *****\n");
+        2:  133:   printf("PASSED TESTS: %d\n",testPassed);
+        2:  134:   printf("FAILED TESTS: %d\n",discardTestFailed);
+        -:  135:	 
+        2:  136:   if (discardTestFailed == 0) {
+        2:  137:       printf ("***** PASSED RANDOM TEST *****\n\n");
+        2:  138:   }
+        -:  139:   
+        2:  140:   printf ("****** COVERAGE ******\n");
+        2:  141:   return 0;
+        -:  142:}

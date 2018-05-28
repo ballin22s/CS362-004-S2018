@@ -1,0 +1,17 @@
+randomtestadventurer.c:
+***** RANDOM TEST *****
+File: randomcardtestadventurer.c
+Function: adventurerCard()
+***********************
+
+
+***** RESULTS *****
+PASSED TESTS: 1000000
+FAILED TESTS: 0
+***** PASSED RANDOM TEST *****
+
+****** COVERAGE ******
+File 'randomtestadventurer.c'
+Lines executed:70.53% of 95
+randomtestadventurer.c:creating 'randomtestadventurer.c.gcov'
+
